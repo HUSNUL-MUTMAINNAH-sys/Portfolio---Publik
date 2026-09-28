@@ -54,7 +54,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabaseReady) return;
     let cancelled = false;
-    (async () => {
+
+    const fetchData = async () => {
       const [pf, sk, pr, ex, ac, ts, ct] = await Promise.all(
         ['profile', 'skills', 'projects', 'experience', 'achievements', 'tech_stack', 'contact'].map(getTable),
       );
@@ -70,8 +71,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         techStack: ts ? byOrder(ts as unknown as TechStack[]) : prev.techStack,
         contact: ct && ct[0] ? (ct[0] as unknown as Contact) : prev.contact,
       }));
-    })();
-    return () => { cancelled = true; };
+    };
+
+    // Fetch data immediately
+    fetchData();
+    
+    // Refresh data every 5 seconds
+    const interval = setInterval(fetchData, 5000);
+
+    return () => { 
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   return <DataContext.Provider value={data}>{children}</DataContext.Provider>;
